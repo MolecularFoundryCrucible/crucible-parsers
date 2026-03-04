@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools >= 61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crucible-parsers"
+version = "0.1.0"
+description = "Development parsers for Crucible datasets"
+readme = "README.md"
+license = {text = "BSD"}
+requires-python = ">=3.8"
+
+dependencies = [
+    "nano-crucible",
+]
+
+[project.entry-points."crucible.parsers"]
+# Register parsers here as: name = "parsers.module:ClassName"
+# Example:
+# xrd = "parsers.xrd:XRDParser"
+
+[tool.setuptools]
+packages = ["parsers"]

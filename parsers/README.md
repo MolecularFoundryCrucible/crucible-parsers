@@ -30,7 +30,7 @@ SubclassParser.parse()
 
 ### Step 1: Create Your Parser Class
 
-Create a new file in `pycrucible/parsers/` (e.g., `xrd.py`):
+Create a new file in `crucible-parsers/parsers/` (e.g., `xrd.py`):
 
 ```python
 #!/usr/bin/env python3
@@ -110,27 +110,23 @@ class XRDParser(BaseParser):
 
 ### Step 2: Register Your Parser
 
-Edit `pycrucible/parsers/__init__.py`:
+Add an entry point in `crucible-parsers/pyproject.toml`:
 
-```python
-from .base import BaseParser
-from .lammps import LAMMPSParser
-from .xrd import XRDParser  # Add your import
+```toml
+[project.entry-points."crucible.parsers"]
+xrd = "parsers.xrd:XRDParser"
+```
 
-# Add to registry (keys should be lowercase)
-PARSER_REGISTRY = {
-    'base': BaseParser,
-    'lammps': LAMMPSParser,
-    'xrd': XRDParser,  # Add your parser
-}
+Then reinstall the package so the entry point is picked up:
 
-__all__ = ['BaseParser', 'LAMMPSParser', 'XRDParser', 'PARSER_REGISTRY', 'get_parser']
+```bash
+pip install -e .
 ```
 
 ### Step 3: Test Your Parser
 
 ```python
-from crucible.parsers import XRDParser
+from parsers.xrd import XRDParser
 
 # Create parser instance
 parser = XRDParser(
@@ -197,6 +193,24 @@ def parse(self):
     self.add_keywords(['XRD', 'powder diffraction'])
     # Only adds keywords that aren't already present
 ```
+
+## CLI Integration
+
+After installing with `pip install -e .`, your parser is automatically available in the nano-crucible CLI:
+
+```bash
+# Upload XRD data
+crucible upload -i sample.xrd -t xrd -pid my-project -u
+
+# Add user metadata/keywords
+crucible upload -i sample.xrd -t xrd -pid my-project -u \
+    --metadata '{"sample_id": "XRD-001"}' \
+    --keywords "validated,published"
+
+# Make it public
+crucible upload -i sample.xrd -t xrd -pid my-project -u --public
+```
+
 
 ## Best Practices
 
@@ -317,30 +331,3 @@ class CSVParser(BaseParser):
         self.add_keywords(['CSV', 'tabular data'])
 ```
 
-## CLI Integration
-
-Once registered, your parser is automatically available in the CLI:
-
-```bash
-# Upload XRD data
-crucible upload -i sample.xrd -t xrd -pid my-project -u
-
-# Add user metadata/keywords
-crucible upload -i sample.xrd -t xrd -pid my-project -u \
-    --metadata '{"sample_id": "XRD-001"}' \
-    --keywords "validated,published"
-
-# Make it public
-crucible upload -i sample.xrd -t xrd -pid my-project -u --public
-```
-
-## Available Parsers
-
-- **BaseParser** (`base`) - Generic upload, no parsing
-- **LAMMPSParser** (`lammps`) - LAMMPS molecular dynamics simulations
-
-## References
-
-- **BaseParser API**: See `base.py` for full API documentation
-- **LAMMPS Example**: See `lammps.py` for a complete implementation
-- **Upload CLI**: See `cli/upload.py` for CLI integration
