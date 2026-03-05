@@ -50,7 +50,7 @@ def read_dm_image(source_file):
         return None, ndim
 
 
-class DigitalMicrographParser:
+class DigitalMicrographParser(BaseParser):
 
     _measurement = None
     _data_format = None
@@ -148,7 +148,7 @@ class DigitalMicrographParser:
         if len(dm_version) == 0:
             raise ValueError("Input file does not have a digital micrograph extension (dm3/dm4)")
         
-        self.data_format = dm_version
+        self.data_format = dm_version[0]
 
 
         # Add Extracted Metadata
@@ -177,53 +177,53 @@ class DigitalMicrographParser:
 
         metaData = {}
         with nio.dm.fileDM(data_file, on_memory=True) as dm1:
-            # # Only keep the most useful tags as meta data
-            # for kk, ii in dm1.allTags.items():
-            #     # Most useful starting tags
-            #     prefix1 = 'ImageList.{}.ImageTags.'.format(dm1.numObjects)
-            #     prefix2 = 'ImageList.{}.ImageData.'.format(dm1.numObjects)
-            #     pos1 = kk.find(prefix1)
-            #     pos2 = kk.find(prefix2)
-            #     if pos1 > -1:
-            #         sub = kk[pos1 + len(prefix1):]
-            #         metaData[sub] = ii
-            #     elif pos2 > -1:
-            #         sub = kk[pos2 + len(prefix2):]
-            #         metaData[sub] = ii
+            # Only keep the most useful tags as meta data
+            for kk, ii in dm1.allTags.items():
+                # Most useful starting tags
+                prefix1 = 'ImageList.{}.ImageTags.'.format(dm1.numObjects)
+                prefix2 = 'ImageList.{}.ImageData.'.format(dm1.numObjects)
+                pos1 = kk.find(prefix1)
+                pos2 = kk.find(prefix2)
+                if pos1 > -1:
+                    sub = kk[pos1 + len(prefix1):]
+                    metaData[sub] = ii
+                elif pos2 > -1:
+                    sub = kk[pos2 + len(prefix2):]
+                    metaData[sub] = ii
 
-            #     # Remove unneeded keys
-            #     for jj in list(metaData):
-            #         if jj.find('frame sequence') > -1:
-            #             del metaData[jj]
-            #         elif jj.find('Private') > -1:
-            #             del metaData[jj]
-            #         elif jj.find('Reference Images') > -1:
-            #             del metaData[jj]
-            #         elif jj.find('Frame.Intensity') > -1:
-            #             del metaData[jj]
-            #         elif jj.find('Area.Transform') > -1:
-            #             del metaData[jj]
-            #         elif jj.find('Parameters.Objects') > -1:
-            #             del metaData[jj]
-            #         elif jj.find('Device.Parameters') > -1:
-            #             del metaData[jj]
+                # Remove unneeded keys
+                for jj in list(metaData):
+                    if jj.find('frame sequence') > -1:
+                        del metaData[jj]
+                    elif jj.find('Private') > -1:
+                        del metaData[jj]
+                    elif jj.find('Reference Images') > -1:
+                        del metaData[jj]
+                    elif jj.find('Frame.Intensity') > -1:
+                        del metaData[jj]
+                    elif jj.find('Area.Transform') > -1:
+                        del metaData[jj]
+                    elif jj.find('Parameters.Objects') > -1:
+                        del metaData[jj]
+                    elif jj.find('Device.Parameters') > -1:
+                        del metaData[jj]
 
-            # # Store the X and Y pixel size, offset and unit
-            # try:
-            #     metaData['PhysicalSizeX'] = metaData['Calibrations.Dimension.1.Scale']
-            #     metaData['PhysicalSizeXOrigin'] = metaData['Calibrations.Dimension.1.Origin']
-            #     metaData['PhysicalSizeXUnit'] = metaData['Calibrations.Dimension.1.Units']
-            #     metaData['PhysicalSizeY'] = metaData['Calibrations.Dimension.2.Scale']
-            #     metaData['PhysicalSizeYOrigin'] = metaData['Calibrations.Dimension.2.Origin']
-            #     metaData['PhysicalSizeYUnit'] = metaData['Calibrations.Dimension.2.Units']
-            # except:
-            #     metaData['PhysicalSizeX'] = 1
-            #     metaData['PhysicalSizeXOrigin'] = 0
-            #     metaData['PhysicalSizeXUnit'] = ''
-            #     metaData['PhysicalSizeY'] = 1
-            #     metaData['PhysicalSizeYOrigin'] = 0
-            #     metaData['PhysicalSizeYUnit'] = ''
-            metaData = dm1.getMetadata()
+            # Store the X and Y pixel size, offset and unit
+            try:
+                metaData['PhysicalSizeX'] = metaData['Calibrations.Dimension.1.Scale']
+                metaData['PhysicalSizeXOrigin'] = metaData['Calibrations.Dimension.1.Origin']
+                metaData['PhysicalSizeXUnit'] = metaData['Calibrations.Dimension.1.Units']
+                metaData['PhysicalSizeY'] = metaData['Calibrations.Dimension.2.Scale']
+                metaData['PhysicalSizeYOrigin'] = metaData['Calibrations.Dimension.2.Origin']
+                metaData['PhysicalSizeYUnit'] = metaData['Calibrations.Dimension.2.Units']
+            except:
+                metaData['PhysicalSizeX'] = 1
+                metaData['PhysicalSizeXOrigin'] = 0
+                metaData['PhysicalSizeXUnit'] = ''
+                metaData['PhysicalSizeY'] = 1
+                metaData['PhysicalSizeYOrigin'] = 0
+                metaData['PhysicalSizeYUnit'] = ''
+            #metaData = dm1.getMetadata(0)
             metaData['FileName'] = data_file
             return metaData
         
