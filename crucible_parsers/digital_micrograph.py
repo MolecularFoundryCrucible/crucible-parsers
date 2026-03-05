@@ -268,6 +268,7 @@ class DigitalMicrographParser(BaseParser):
             return None
         
         fig, ax = py4d.show(imarr, scaling = 'log', returnfig=True)
+        ax.axis('off')
         fig.savefig(file_path, bbox_inches='tight', pad_inches=0.05, dpi=100)
         plt.close(fig)
 
