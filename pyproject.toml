@@ -17,6 +17,8 @@ dependencies = [
 [project.entry-points."crucible.parsers"]
 matensemble-manager = "crucible_parsers.matensemble:MatEnsembleManagerParser"
 matensemble-run     = "crucible_parsers.matensemble:MatEnsembleRunParser"
+phasefield-manager  = "crucible_parsers.matensemble:PhaseFieldManagerParser"
+phasefield-run      = "crucible_parsers.matensemble:PhaseFieldRunParser"
 
 [tool.setuptools]
 packages = ["crucible_parsers", "crucible_parsers.matensemble"]
