@@ -9,10 +9,6 @@ from crucible.parsers import BaseParser
 
 import os
 import logging
-import re
-from PIL import Image
-import numpy as np
-import ncempy.io as nio
 from datetime import datetime
 from crucible import BaseDataset
 
@@ -28,7 +24,13 @@ def read_dm_image(source_file):
     Returns a 2D numpy array and the image dimensionality.
     """
     import warnings
-
+    try:
+        import numpy as np
+        import ncempy.io as nio
+    except:
+        raise ImportError('The following packages are required for the DM parser to work:\
+                            numpy, pillow, ncempy.io, py4DSTEM (0.13.17), matplotlib')
+    
     f = nio.dm.fileDM(source_file, on_memory=True)
     f.parseHeader()
     ds = f.getDataset(0)
@@ -133,6 +135,7 @@ class DigitalMicrographParser:
                 self.add_keywords(["domain", "specific"])
                 self.thumbnail = self._generate_thumbnail()
         """
+            
         # Validate input
         supported_filetypes = ['dm3', 'dm4']
 
@@ -166,6 +169,12 @@ class DigitalMicrographParser:
 
     @staticmethod
     def get_scientific_metadata(data_file):
+        try:
+            import ncempy.io as nio
+        except:
+            raise ImportError('The following packages are required for the DM parser to work:\
+                               pillow, ncempy.io, py4DSTEM (0.13.17), matplotlib')
+
         metaData = {}
         with nio.dm.fileDM(data_file, on_memory=True) as dm1:
             # # Only keep the most useful tags as meta data
@@ -234,10 +243,12 @@ class DigitalMicrographParser:
         import logging
 
         try:
+            from PIL import Image
             import matplotlib.pyplot as plt
             import py4DSTEM as py4d
         except:
-            raise ImportError('py4DSTEM (0.13.17) and matplotlib need to be installed for the DM ingestor to work!')
+            raise ImportError('The following packages are required for the DM parser to work:\
+                               pillow, ncempy.io, py4DSTEM (0.13.17), matplotlib')
         
         # Suppress matplotlib's verbose output
         logging.getLogger('matplotlib').setLevel(logging.WARNING)
