@@ -22,12 +22,30 @@ logger = logging.getLogger(__name__)
 
 #%%
 
-def get_image_dim(source_file):
+def read_dm_image(source_file):
+    """Read image data from a DM3 or DM4 file using ncempy.
+    
+    Returns a 2D numpy array and the image dimensionality.
+    """
+    import warnings
+
     f = nio.dm.fileDM(source_file, on_memory=True)
     f.parseHeader()
     ds = f.getDataset(0)
     img = ds['data']
-    return(len(img.shape))
+    ndim = len(img.shape)
+    
+    if ndim == 2:
+        return np.asarray(img), ndim
+    elif ndim == 3:
+        # Take the first slice
+        return np.asarray(img[0, :, :]), ndim
+    elif ndim == 4:
+        # Take the first slice along both extra dimensions
+        return np.asarray(img[0, 0, :, :]), ndim
+    else:
+        warnings.warn(f"Unexpected dimensionality: {ndim}")
+        return None, ndim
 
 
 class DigitalMicrographParser:
@@ -142,7 +160,7 @@ class DigitalMicrographParser:
         self.measurement = data_file_metadata.get('Microscope Info.Illumination Mode')
 
         # Generate thumbnail
-        self.thumbnail = self.render_thumbnail()
+        self.thumbnail = self.generate_dm_thumbnail(data_file)
 
 
 
@@ -150,53 +168,53 @@ class DigitalMicrographParser:
     def get_scientific_metadata(data_file):
         metaData = {}
         with nio.dm.fileDM(data_file, on_memory=True) as dm1:
-            # Only keep the most useful tags as meta data
-            for kk, ii in dm1.allTags.items():
-                # Most useful starting tags
-                prefix1 = 'ImageList.{}.ImageTags.'.format(dm1.numObjects)
-                prefix2 = 'ImageList.{}.ImageData.'.format(dm1.numObjects)
-                pos1 = kk.find(prefix1)
-                pos2 = kk.find(prefix2)
-                if pos1 > -1:
-                    sub = kk[pos1 + len(prefix1):]
-                    metaData[sub] = ii
-                elif pos2 > -1:
-                    sub = kk[pos2 + len(prefix2):]
-                    metaData[sub] = ii
+            # # Only keep the most useful tags as meta data
+            # for kk, ii in dm1.allTags.items():
+            #     # Most useful starting tags
+            #     prefix1 = 'ImageList.{}.ImageTags.'.format(dm1.numObjects)
+            #     prefix2 = 'ImageList.{}.ImageData.'.format(dm1.numObjects)
+            #     pos1 = kk.find(prefix1)
+            #     pos2 = kk.find(prefix2)
+            #     if pos1 > -1:
+            #         sub = kk[pos1 + len(prefix1):]
+            #         metaData[sub] = ii
+            #     elif pos2 > -1:
+            #         sub = kk[pos2 + len(prefix2):]
+            #         metaData[sub] = ii
 
-                # Remove unneeded keys
-                for jj in list(metaData):
-                    if jj.find('frame sequence') > -1:
-                        del metaData[jj]
-                    elif jj.find('Private') > -1:
-                        del metaData[jj]
-                    elif jj.find('Reference Images') > -1:
-                        del metaData[jj]
-                    elif jj.find('Frame.Intensity') > -1:
-                        del metaData[jj]
-                    elif jj.find('Area.Transform') > -1:
-                        del metaData[jj]
-                    elif jj.find('Parameters.Objects') > -1:
-                        del metaData[jj]
-                    elif jj.find('Device.Parameters') > -1:
-                        del metaData[jj]
+            #     # Remove unneeded keys
+            #     for jj in list(metaData):
+            #         if jj.find('frame sequence') > -1:
+            #             del metaData[jj]
+            #         elif jj.find('Private') > -1:
+            #             del metaData[jj]
+            #         elif jj.find('Reference Images') > -1:
+            #             del metaData[jj]
+            #         elif jj.find('Frame.Intensity') > -1:
+            #             del metaData[jj]
+            #         elif jj.find('Area.Transform') > -1:
+            #             del metaData[jj]
+            #         elif jj.find('Parameters.Objects') > -1:
+            #             del metaData[jj]
+            #         elif jj.find('Device.Parameters') > -1:
+            #             del metaData[jj]
 
-            # Store the X and Y pixel size, offset and unit
-            try:
-                metaData['PhysicalSizeX'] = metaData['Calibrations.Dimension.1.Scale']
-                metaData['PhysicalSizeXOrigin'] = metaData['Calibrations.Dimension.1.Origin']
-                metaData['PhysicalSizeXUnit'] = metaData['Calibrations.Dimension.1.Units']
-                metaData['PhysicalSizeY'] = metaData['Calibrations.Dimension.2.Scale']
-                metaData['PhysicalSizeYOrigin'] = metaData['Calibrations.Dimension.2.Origin']
-                metaData['PhysicalSizeYUnit'] = metaData['Calibrations.Dimension.2.Units']
-            except:
-                metaData['PhysicalSizeX'] = 1
-                metaData['PhysicalSizeXOrigin'] = 0
-                metaData['PhysicalSizeXUnit'] = ''
-                metaData['PhysicalSizeY'] = 1
-                metaData['PhysicalSizeYOrigin'] = 0
-                metaData['PhysicalSizeYUnit'] = ''
-
+            # # Store the X and Y pixel size, offset and unit
+            # try:
+            #     metaData['PhysicalSizeX'] = metaData['Calibrations.Dimension.1.Scale']
+            #     metaData['PhysicalSizeXOrigin'] = metaData['Calibrations.Dimension.1.Origin']
+            #     metaData['PhysicalSizeXUnit'] = metaData['Calibrations.Dimension.1.Units']
+            #     metaData['PhysicalSizeY'] = metaData['Calibrations.Dimension.2.Scale']
+            #     metaData['PhysicalSizeYOrigin'] = metaData['Calibrations.Dimension.2.Origin']
+            #     metaData['PhysicalSizeYUnit'] = metaData['Calibrations.Dimension.2.Units']
+            # except:
+            #     metaData['PhysicalSizeX'] = 1
+            #     metaData['PhysicalSizeXOrigin'] = 0
+            #     metaData['PhysicalSizeXUnit'] = ''
+            #     metaData['PhysicalSizeY'] = 1
+            #     metaData['PhysicalSizeYOrigin'] = 0
+            #     metaData['PhysicalSizeYUnit'] = ''
+            metaData = dm1.getMetadata()
             metaData['FileName'] = data_file
             return metaData
         
@@ -205,55 +223,49 @@ class DigitalMicrographParser:
         dm_keywords = [metadata_dict.get(key, None) for key in metadata_dict if 'Mode' in key]
         return dm_keywords
 
-    @staticmethod
-    def read_dm_image(source_file):
-        """Read image data from a DM3 or DM4 file using ncempy.
-        
-        Returns a 2D numpy array and the image dimensionality.
-        """
-        f = nio.dm.fileDM(source_file, on_memory=True)
-        f.parseHeader()
-        ds = f.getDataset(0)
-        img = ds['data']
-        ndim = len(img.shape)
-        
-        if ndim == 2:
-            return np.asarray(img), ndim
-        elif ndim == 3:
-            # Take the first slice
-            return np.asarray(img[0, :, :]), ndim
-        elif ndim == 4:
-            # Take the first slice along both extra dimensions
-            return np.asarray(img[0, 0, :, :]), ndim
-        else:
-            raise ValueError(f"Unexpected dimensionality: {ndim}")
     
     @staticmethod
-    def generate_dm_thumbnail(dm_path, output_png_path):
+    def generate_dm_thumbnail(dm_path):
         """Open a DM3/DM4 file, extract a 2D image, and save a thumbnail PNG.
         
-        Returns True on success, False on failure.
+        Returns filepath on success, None on failure.
         """
+        from crucible.config import get_cache_dir
+        import logging
+
         try:
             import matplotlib.pyplot as plt
             import py4DSTEM as py4d
         except:
             raise ImportError('py4DSTEM (0.13.17) and matplotlib need to be installed for the DM ingestor to work!')
         
-        try:
-            imarr, ndim = self.read_dm_image(dm_path)
-            fig,ax = py4d.show(imarr, scaling = 'log', returnfig=True)
-            fig.savefig(output_png_path, bbox_inches='tight', pad_inches=0.05, dpi=100)
-            plt.close(fig)
+        # Suppress matplotlib's verbose output
+        logging.getLogger('matplotlib').setLevel(logging.WARNING)
+        logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 
-            # Resize to thumbnail
-            im = Image.open(output_png_path)
-            im.thumbnail((200, 200))
-            im = im.convert('RGB')
-            im.save(output_png_path, format='PNG')
-
-            return True
+        # Get cache directory and create thumbnails_upload subdirectory
+        cache_dir = get_cache_dir()
+        thumbnail_dir = os.path.join(cache_dir, 'thumbnails_upload')
+        os.makedirs(thumbnail_dir, exist_ok=True)
         
-        except Exception as e:
-            print(f"Failed to generate thumbnail: {e}")
-            return False
+        # Create file path
+        fname = os.path.splitext(os.path.basename(dm_path))[0]
+        file_path = os.path.join(thumbnail_dir, f'{fname}.png')
+        
+        imarr, ndim = read_dm_image(dm_path)
+        if ndim < 2:
+            return None
+        
+        fig, ax = py4d.show(imarr, scaling = 'log', returnfig=True)
+        fig.savefig(file_path, bbox_inches='tight', pad_inches=0.05, dpi=100)
+        plt.close(fig)
+
+        # Resize to thumbnail
+        im = Image.open(file_path)
+        im.thumbnail((200, 200))
+        im = im.convert('RGB')
+        im.save(file_path, format='PNG')
+
+        return file_path
+        
+
