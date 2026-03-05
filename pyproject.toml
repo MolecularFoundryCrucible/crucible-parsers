@@ -15,9 +15,8 @@ dependencies = [
 ]
 
 [project.entry-points."crucible.parsers"]
-# Register parsers here as: name = "crucible_parsers.module:ClassName"
-# Example:
-# xrd = "crucible_parsers.xrd:XRDParser"
+matensemble-manager = "crucible_parsers.matensemble:MatEnsembleManagerParser"
+matensemble-run     = "crucible_parsers.matensemble:MatEnsembleRunParser"
 
 [tool.setuptools]
-packages = ["crucible_parsers"]
+packages = ["crucible_parsers", "crucible_parsers.matensemble"]
