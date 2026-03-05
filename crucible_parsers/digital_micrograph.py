@@ -5,7 +5,7 @@ Created on Tue Feb 10 17:45:48 2026
 
 @author: mkywall
 """
-from .base import BaseParser
+from crucible.parsers import BaseParser
 
 import os
 import logging

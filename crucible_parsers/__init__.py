@@ -10,9 +10,9 @@ Install this package in editable mode to make parsers available to nano-crucible
 Then register each parser as an entry point in pyproject.toml:
 
     [project.entry-points."crucible.parsers"]
-    myparser = "parsers.mymodule:MyParserClass"
+    myparser = "crucible_parsers.mymodule:MyParserClass"
 """
 
-from .base import BaseParser
+from crucible.parsers import BaseParser
 
 __all__ = ["BaseParser"]
