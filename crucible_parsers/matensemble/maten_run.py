@@ -16,7 +16,7 @@ import pickle
 import re
 from pathlib import Path
 
-from .base import BaseParser
+from crucible.parsers import BaseParser
 
 logger = logging.getLogger(__name__)
 

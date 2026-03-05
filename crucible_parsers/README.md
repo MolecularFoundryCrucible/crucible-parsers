@@ -30,7 +30,7 @@ SubclassParser.parse()
 
 ### Step 1: Create Your Parser Class
 
-Create a new file in `crucible-parsers/parsers/` (e.g., `xrd.py`):
+Create a new file in `crucible-parsers/crucible_parsers/` (e.g., `xrd.py`):
 
 ```python
 #!/usr/bin/env python3
@@ -39,7 +39,7 @@ Create a new file in `crucible-parsers/parsers/` (e.g., `xrd.py`):
 
 import os
 import logging
-from .base import BaseParser
+from crucible.parsers import BaseParser
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ Add an entry point in `crucible-parsers/pyproject.toml`:
 
 ```toml
 [project.entry-points."crucible.parsers"]
-xrd = "parsers.xrd:XRDParser"
+xrd = "crucible_parsers.xrd:XRDParser"
 ```
 
 Then reinstall the package so the entry point is picked up:
@@ -126,7 +126,7 @@ pip install -e .
 ### Step 3: Test Your Parser
 
 ```python
-from parsers.xrd import XRDParser
+from crucible_parsers.xrd import XRDParser
 
 # Create parser instance
 parser = XRDParser(
@@ -303,7 +303,7 @@ def _create_visualization():
 
 ```python
 import csv
-from .base import BaseParser
+from crucible.parsers import BaseParser
 
 class CSVParser(BaseParser):
     """Parser for CSV tabular data."""
